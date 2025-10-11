@@ -14,8 +14,8 @@ describe("MyToken", () => {
     myTokenC = await hre.ethers.deployContract("MyToken", [
       "MyToken",
       "MT",
-      18,
-      100,
+      decimals,
+      mintingAmount,
     ]);
   });
   describe("Basic state value check", () => {
@@ -26,7 +26,7 @@ describe("MyToken", () => {
       expect(await myTokenC.symbol()).equal("MT");
     });
     it("should return decimals", async () => {
-      expect(await myTokenC.decimals()).equal("18");
+      expect(await myTokenC.decimals()).equal(decimals);
     });
     it("should return 100 totalSupply", async () => {
       expect(await myTokenC.totalSupply()).equal(
@@ -71,6 +71,58 @@ describe("MyToken", () => {
           signer1.address
         )
       ).to.be.revertedWith("insufficient balance");
+    });
+  });
+  describe("Transferfrom", () => {
+    it("should emit Approval event", async () => {
+      const signer1 = signers[1];
+      await expect(
+        myTokenC.approve(signer1.address, hre.ethers.parseUnits("10", decimals))
+      )
+        .to.emit(myTokenC, "Approval")
+        .withArgs(signer1.address, hre.ethers.parseUnits("10", decimals));
+    });
+    it("should be reverted with insufficient allowance error", async () => {
+      const signer0 = signers[0];
+      const signer1 = signers[1];
+      await expect(
+        myTokenC
+          .connect(signer1)
+          .transferFrom(
+            signer0.address,
+            signer1.address,
+            hre.ethers.parseUnits("1", decimals)
+          )
+      ).to.be.revertedWith("insufficient allowance");
+    });
+    it("should transfer tokens from signer0 to signer1 using transferFrom", async () => {
+      const signer0 = signers[0];
+      const signer1 = signers[1];
+
+      await myTokenC.approve(
+        signer1.address,
+        hre.ethers.parseUnits("10", decimals)
+      );
+
+      await expect(
+        myTokenC
+          .connect(signer1)
+          .transferFrom(
+            signer0.address,
+            signer1.address,
+            hre.ethers.parseUnits("5", decimals)
+          )
+      )
+        .to.emit(myTokenC, "Transfer")
+        .withArgs(
+          signer0.address,
+          signer1.address,
+          hre.ethers.parseUnits("5", decimals)
+        );
+
+      expect(await myTokenC.balanceOf(signer1.address)).equal(
+        hre.ethers.parseUnits("5", decimals)
+      );
     });
   });
 });
