@@ -39,7 +39,7 @@ contract TinyBank {
             stakingToken.mint(reward, to);
         }
         lastClaimedBlock[to] = block.number;
-        _;
+        _; //caller's
     }
 
     function stake(uint256 _amount) external updateReward(msg.sender) {
