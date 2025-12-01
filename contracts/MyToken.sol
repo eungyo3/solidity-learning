@@ -26,6 +26,10 @@ contract MyToken is ManagedAccess {
         _mint(_amount * 10 ** uint256(decimals), msg.sender);
     }
 
+    function faucet(uint256 amount) external {
+        _mint(amount, msg.sender);
+    }
+
     function approve(address spender, uint256 amount) external {
         allowance[msg.sender][spender] = amount;
         emit Approval(spender, amount);
@@ -35,6 +39,7 @@ contract MyToken is ManagedAccess {
         //from = owner
         address spender = msg.sender;
         require(allowance[from][spender] >= amount, "insufficient allowance");
+        require(balanceOf[from] >= amount, "insufficient balance");
         allowance[from][spender] -= amount;
         balanceOf[from] -= amount;
         balanceOf[to] += amount;
